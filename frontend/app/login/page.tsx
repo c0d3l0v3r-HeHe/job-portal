@@ -22,9 +22,19 @@ export default function Login() {
 
       // Normal login
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        console.error("User missing in response", data);
+      }
 
-      router.push("/dashboard");
+      if (data.user.role === "COMPANY") {
+        router.push("/company");
+      } else if (data.user.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
 
     } catch (err: any) {
       alert(err.response?.data?.error || "Invalid Credentials");

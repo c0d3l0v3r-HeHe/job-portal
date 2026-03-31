@@ -27,3 +27,53 @@ export type User = Prisma.UserModel
  * 
  */
 export type Resume = Prisma.ResumeModel
+/**
+ * Model Company
+ * 
+ */
+export type Company = Prisma.CompanyModel
+/**
+ * Model Job
+ * 
+ */
+export type Job = Prisma.JobModel
+/**
+ * Model Application
+ * 
+ */
+export type Application = Prisma.ApplicationModel
+/**
+ * Model RecruiterNote
+ * 
+ */
+export type RecruiterNote = Prisma.RecruiterNoteModel
+/**
+ * Model Conversation
+ * 
+ */
+export type Conversation = Prisma.ConversationModel
+/**
+ * Model ConversationParticipant
+ * 
+ */
+export type ConversationParticipant = Prisma.ConversationParticipantModel
+/**
+ * Model Message
+ * 
+ */
+export type Message = Prisma.MessageModel
+/**
+ * Model UserKey
+ * 
+ */
+export type UserKey = Prisma.UserKeyModel
+/**
+ * Model OtpLog
+ * 
+ */
+export type OtpLog = Prisma.OtpLogModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel

@@ -52,7 +52,17 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
-  Resume: 'Resume'
+  Resume: 'Resume',
+  Company: 'Company',
+  Job: 'Job',
+  Application: 'Application',
+  RecruiterNote: 'RecruiterNote',
+  Conversation: 'Conversation',
+  ConversationParticipant: 'ConversationParticipant',
+  Message: 'Message',
+  UserKey: 'UserKey',
+  OtpLog: 'OtpLog',
+  AuditLog: 'AuditLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -91,6 +101,122 @@ export const ResumeScalarFieldEnum = {
 } as const
 
 export type ResumeScalarFieldEnum = (typeof ResumeScalarFieldEnum)[keyof typeof ResumeScalarFieldEnum]
+
+
+export const CompanyScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  passwordHash: 'passwordHash',
+  createdAt: 'createdAt'
+} as const
+
+export type CompanyScalarFieldEnum = (typeof CompanyScalarFieldEnum)[keyof typeof CompanyScalarFieldEnum]
+
+
+export const JobScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  createdAt: 'createdAt',
+  location: 'location',
+  isRemote: 'isRemote',
+  jobType: 'jobType',
+  tags: 'tags',
+  companyId: 'companyId'
+} as const
+
+export type JobScalarFieldEnum = (typeof JobScalarFieldEnum)[keyof typeof JobScalarFieldEnum]
+
+
+export const ApplicationScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  status: 'status',
+  coverNote: 'coverNote',
+  userId: 'userId',
+  jobId: 'jobId'
+} as const
+
+export type ApplicationScalarFieldEnum = (typeof ApplicationScalarFieldEnum)[keyof typeof ApplicationScalarFieldEnum]
+
+
+export const RecruiterNoteScalarFieldEnum = {
+  id: 'id',
+  note: 'note',
+  createdAt: 'createdAt',
+  applicationId: 'applicationId',
+  authorId: 'authorId'
+} as const
+
+export type RecruiterNoteScalarFieldEnum = (typeof RecruiterNoteScalarFieldEnum)[keyof typeof RecruiterNoteScalarFieldEnum]
+
+
+export const ConversationScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  isGroup: 'isGroup'
+} as const
+
+export type ConversationScalarFieldEnum = (typeof ConversationScalarFieldEnum)[keyof typeof ConversationScalarFieldEnum]
+
+
+export const ConversationParticipantScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  conversationId: 'conversationId'
+} as const
+
+export type ConversationParticipantScalarFieldEnum = (typeof ConversationParticipantScalarFieldEnum)[keyof typeof ConversationParticipantScalarFieldEnum]
+
+
+export const MessageScalarFieldEnum = {
+  id: 'id',
+  encryptedText: 'encryptedText',
+  iv: 'iv',
+  encryptedKey: 'encryptedKey',
+  createdAt: 'createdAt',
+  senderId: 'senderId',
+  companyId: 'companyId',
+  conversationId: 'conversationId'
+} as const
+
+export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum]
+
+
+export const UserKeyScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  publicKey: 'publicKey',
+  createdAt: 'createdAt'
+} as const
+
+export type UserKeyScalarFieldEnum = (typeof UserKeyScalarFieldEnum)[keyof typeof UserKeyScalarFieldEnum]
+
+
+export const OtpLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  success: 'success',
+  createdAt: 'createdAt'
+} as const
+
+export type OtpLogScalarFieldEnum = (typeof OtpLogScalarFieldEnum)[keyof typeof OtpLogScalarFieldEnum]
+
+
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  action: 'action',
+  userId: 'userId',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  prevHash: 'prevHash',
+  hash: 'hash'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
 
 
 export const SortOrder = {
