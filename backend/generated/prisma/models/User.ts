@@ -206,7 +206,7 @@ export type UserWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   totpSecret?: Prisma.StringNullableFilter<"User"> | string | null
   totpEnabled?: Prisma.BoolFilter<"User"> | boolean
-  resume?: Prisma.XOR<Prisma.ResumeNullableScalarRelationFilter, Prisma.ResumeWhereInput> | null
+  resumes?: Prisma.ResumeListRelationFilter
   applications?: Prisma.ApplicationListRelationFilter
   messages?: Prisma.MessageListRelationFilter
   conversations?: Prisma.ConversationParticipantListRelationFilter
@@ -224,7 +224,7 @@ export type UserOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   totpEnabled?: Prisma.SortOrder
-  resume?: Prisma.ResumeOrderByWithRelationInput
+  resumes?: Prisma.ResumeOrderByRelationAggregateInput
   applications?: Prisma.ApplicationOrderByRelationAggregateInput
   messages?: Prisma.MessageOrderByRelationAggregateInput
   conversations?: Prisma.ConversationParticipantOrderByRelationAggregateInput
@@ -245,7 +245,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   totpSecret?: Prisma.StringNullableFilter<"User"> | string | null
   totpEnabled?: Prisma.BoolFilter<"User"> | boolean
-  resume?: Prisma.XOR<Prisma.ResumeNullableScalarRelationFilter, Prisma.ResumeWhereInput> | null
+  resumes?: Prisma.ResumeListRelationFilter
   applications?: Prisma.ApplicationListRelationFilter
   messages?: Prisma.MessageListRelationFilter
   conversations?: Prisma.ConversationParticipantListRelationFilter
@@ -291,7 +291,7 @@ export type UserCreateInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantCreateNestedManyWithoutUserInput
@@ -309,7 +309,7 @@ export type UserUncheckedCreateInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -327,7 +327,7 @@ export type UserUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUpdateManyWithoutUserNestedInput
@@ -345,7 +345,7 @@ export type UserUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -446,18 +446,18 @@ export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
-export type UserCreateNestedOneWithoutResumeInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutResumeInput, Prisma.UserUncheckedCreateWithoutResumeInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutResumeInput
+export type UserCreateNestedOneWithoutResumesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutResumesInput, Prisma.UserUncheckedCreateWithoutResumesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutResumesInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutResumeNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutResumeInput, Prisma.UserUncheckedCreateWithoutResumeInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutResumeInput
-  upsert?: Prisma.UserUpsertWithoutResumeInput
+export type UserUpdateOneRequiredWithoutResumesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutResumesInput, Prisma.UserUncheckedCreateWithoutResumesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutResumesInput
+  upsert?: Prisma.UserUpsertWithoutResumesInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutResumeInput, Prisma.UserUpdateWithoutResumeInput>, Prisma.UserUncheckedUpdateWithoutResumeInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutResumesInput, Prisma.UserUpdateWithoutResumesInput>, Prisma.UserUncheckedUpdateWithoutResumesInput>
 }
 
 export type UserCreateNestedOneWithoutApplicationsInput = {
@@ -550,7 +550,7 @@ export type UserUpdateOneWithoutAuditLogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.UserUpdateWithoutAuditLogsInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
 }
 
-export type UserCreateWithoutResumeInput = {
+export type UserCreateWithoutResumesInput = {
   id?: string
   email: string
   passwordHash: string
@@ -567,7 +567,7 @@ export type UserCreateWithoutResumeInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
 }
 
-export type UserUncheckedCreateWithoutResumeInput = {
+export type UserUncheckedCreateWithoutResumesInput = {
   id?: string
   email: string
   passwordHash: string
@@ -584,23 +584,23 @@ export type UserUncheckedCreateWithoutResumeInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
 }
 
-export type UserCreateOrConnectWithoutResumeInput = {
+export type UserCreateOrConnectWithoutResumesInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutResumeInput, Prisma.UserUncheckedCreateWithoutResumeInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutResumesInput, Prisma.UserUncheckedCreateWithoutResumesInput>
 }
 
-export type UserUpsertWithoutResumeInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutResumeInput, Prisma.UserUncheckedUpdateWithoutResumeInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutResumeInput, Prisma.UserUncheckedCreateWithoutResumeInput>
+export type UserUpsertWithoutResumesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutResumesInput, Prisma.UserUncheckedUpdateWithoutResumesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutResumesInput, Prisma.UserUncheckedCreateWithoutResumesInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutResumeInput = {
+export type UserUpdateToOneWithWhereWithoutResumesInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutResumeInput, Prisma.UserUncheckedUpdateWithoutResumeInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutResumesInput, Prisma.UserUncheckedUpdateWithoutResumesInput>
 }
 
-export type UserUpdateWithoutResumeInput = {
+export type UserUpdateWithoutResumesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -617,7 +617,7 @@ export type UserUpdateWithoutResumeInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
 }
 
-export type UserUncheckedUpdateWithoutResumeInput = {
+export type UserUncheckedUpdateWithoutResumesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
@@ -643,7 +643,7 @@ export type UserCreateWithoutApplicationsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantCreateNestedManyWithoutUserInput
   userKeys?: Prisma.UserKeyCreateNestedManyWithoutUserInput
@@ -660,7 +660,7 @@ export type UserUncheckedCreateWithoutApplicationsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
   userKeys?: Prisma.UserKeyUncheckedCreateNestedManyWithoutUserInput
@@ -693,7 +693,7 @@ export type UserUpdateWithoutApplicationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUpdateManyWithoutUserNestedInput
   userKeys?: Prisma.UserKeyUpdateManyWithoutUserNestedInput
@@ -710,7 +710,7 @@ export type UserUncheckedUpdateWithoutApplicationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
   userKeys?: Prisma.UserKeyUncheckedUpdateManyWithoutUserNestedInput
@@ -727,7 +727,7 @@ export type UserCreateWithoutConversationsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageCreateNestedManyWithoutSenderInput
   userKeys?: Prisma.UserKeyCreateNestedManyWithoutUserInput
@@ -744,7 +744,7 @@ export type UserUncheckedCreateWithoutConversationsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
   userKeys?: Prisma.UserKeyUncheckedCreateNestedManyWithoutUserInput
@@ -777,7 +777,7 @@ export type UserUpdateWithoutConversationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
   userKeys?: Prisma.UserKeyUpdateManyWithoutUserNestedInput
@@ -794,7 +794,7 @@ export type UserUncheckedUpdateWithoutConversationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
   userKeys?: Prisma.UserKeyUncheckedUpdateManyWithoutUserNestedInput
@@ -811,7 +811,7 @@ export type UserCreateWithoutMessagesInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutUserInput
   conversations?: Prisma.ConversationParticipantCreateNestedManyWithoutUserInput
   userKeys?: Prisma.UserKeyCreateNestedManyWithoutUserInput
@@ -828,7 +828,7 @@ export type UserUncheckedCreateWithoutMessagesInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutUserInput
   conversations?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
   userKeys?: Prisma.UserKeyUncheckedCreateNestedManyWithoutUserInput
@@ -861,7 +861,7 @@ export type UserUpdateWithoutMessagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutUserNestedInput
   conversations?: Prisma.ConversationParticipantUpdateManyWithoutUserNestedInput
   userKeys?: Prisma.UserKeyUpdateManyWithoutUserNestedInput
@@ -878,7 +878,7 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutUserNestedInput
   conversations?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
   userKeys?: Prisma.UserKeyUncheckedUpdateManyWithoutUserNestedInput
@@ -895,7 +895,7 @@ export type UserCreateWithoutUserKeysInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantCreateNestedManyWithoutUserInput
@@ -912,7 +912,7 @@ export type UserUncheckedCreateWithoutUserKeysInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -945,7 +945,7 @@ export type UserUpdateWithoutUserKeysInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUpdateManyWithoutUserNestedInput
@@ -962,7 +962,7 @@ export type UserUncheckedUpdateWithoutUserKeysInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -979,7 +979,7 @@ export type UserCreateWithoutOtpLogsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantCreateNestedManyWithoutUserInput
@@ -996,7 +996,7 @@ export type UserUncheckedCreateWithoutOtpLogsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -1029,7 +1029,7 @@ export type UserUpdateWithoutOtpLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUpdateManyWithoutUserNestedInput
@@ -1046,7 +1046,7 @@ export type UserUncheckedUpdateWithoutOtpLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -1063,7 +1063,7 @@ export type UserCreateWithoutAuditLogsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantCreateNestedManyWithoutUserInput
@@ -1080,7 +1080,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   createdAt?: Date | string
   totpSecret?: string | null
   totpEnabled?: boolean
-  resume?: Prisma.ResumeUncheckedCreateNestedOneWithoutUserInput
+  resumes?: Prisma.ResumeUncheckedCreateNestedManyWithoutUserInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
   conversations?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
@@ -1113,7 +1113,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUpdateManyWithoutUserNestedInput
@@ -1130,7 +1130,7 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  resume?: Prisma.ResumeUncheckedUpdateOneWithoutUserNestedInput
+  resumes?: Prisma.ResumeUncheckedUpdateManyWithoutUserNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
   conversations?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
@@ -1144,6 +1144,7 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
  */
 
 export type UserCountOutputType = {
+  resumes: number
   applications: number
   messages: number
   conversations: number
@@ -1153,6 +1154,7 @@ export type UserCountOutputType = {
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  resumes?: boolean | UserCountOutputTypeCountResumesArgs
   applications?: boolean | UserCountOutputTypeCountApplicationsArgs
   messages?: boolean | UserCountOutputTypeCountMessagesArgs
   conversations?: boolean | UserCountOutputTypeCountConversationsArgs
@@ -1169,6 +1171,13 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
    * Select specific fields to fetch from the UserCountOutputType
    */
   select?: Prisma.UserCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountResumesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ResumeWhereInput
 }
 
 /**
@@ -1223,7 +1232,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   totpSecret?: boolean
   totpEnabled?: boolean
-  resume?: boolean | Prisma.User$resumeArgs<ExtArgs>
+  resumes?: boolean | Prisma.User$resumesArgs<ExtArgs>
   applications?: boolean | Prisma.User$applicationsArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
   conversations?: boolean | Prisma.User$conversationsArgs<ExtArgs>
@@ -1268,7 +1277,7 @@ export type UserSelectScalar = {
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "name" | "role" | "createdAt" | "totpSecret" | "totpEnabled", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  resume?: boolean | Prisma.User$resumeArgs<ExtArgs>
+  resumes?: boolean | Prisma.User$resumesArgs<ExtArgs>
   applications?: boolean | Prisma.User$applicationsArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
   conversations?: boolean | Prisma.User$conversationsArgs<ExtArgs>
@@ -1283,7 +1292,7 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
-    resume: Prisma.$ResumePayload<ExtArgs> | null
+    resumes: Prisma.$ResumePayload<ExtArgs>[]
     applications: Prisma.$ApplicationPayload<ExtArgs>[]
     messages: Prisma.$MessagePayload<ExtArgs>[]
     conversations: Prisma.$ConversationParticipantPayload<ExtArgs>[]
@@ -1694,7 +1703,7 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  resume<T extends Prisma.User$resumeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$resumeArgs<ExtArgs>>): Prisma.Prisma__ResumeClient<runtime.Types.Result.GetResult<Prisma.$ResumePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  resumes<T extends Prisma.User$resumesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$resumesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ResumePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   applications<T extends Prisma.User$applicationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$applicationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.User$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   conversations<T extends Prisma.User$conversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConversationParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2129,9 +2138,9 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * User.resume
+ * User.resumes
  */
-export type User$resumeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$resumesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Resume
    */
@@ -2145,6 +2154,11 @@ export type User$resumeArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    */
   include?: Prisma.ResumeInclude<ExtArgs> | null
   where?: Prisma.ResumeWhereInput
+  orderBy?: Prisma.ResumeOrderByWithRelationInput | Prisma.ResumeOrderByWithRelationInput[]
+  cursor?: Prisma.ResumeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ResumeScalarFieldEnum | Prisma.ResumeScalarFieldEnum[]
 }
 
 /**

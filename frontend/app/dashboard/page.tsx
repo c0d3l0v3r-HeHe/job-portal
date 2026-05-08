@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import API from "@/lib/api";
+import { generateKeyPair, signData } from "@/lib/pki";
 
 type Job = {
   id: string;
@@ -43,7 +44,14 @@ export default function Dashboard() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [search, setSearch]           = useState("");
   const [activeTab, setActiveTab]     = useState<"jobs" | "applications">("jobs");
-  const [applying, setApplying]       = useState<string | null>(null);
+  
+  // Application Form State
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob]       = useState<Job | null>(null);
+  const [coverNote, setCoverNote]           = useState("");
+  const [resumeFile, setResumeFile]         = useState<File | null>(null);
+  const [applying, setApplying]             = useState(false);
+  
   const [unapplying, setUnapplying]   = useState<string | null>(null);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [toast, setToast]             = useState<{ msg: string; type: "ok" | "err" } | null>(null);
@@ -76,6 +84,23 @@ export default function Dashboard() {
     })();
   }, []);
 
+  // PKI Key Generation
+  useEffect(() => {
+    const setupPKI = async () => {
+      // Check if we already generated keys for this session
+      if (!localStorage.getItem("pki_private_key")) {
+        const { publicKeyJwk, privateKeyJwk } = await generateKeyPair();
+        
+        // Save private key locally (NEVER send to server)
+        localStorage.setItem("pki_private_key", JSON.stringify(privateKeyJwk));
+        
+        // Send public key to the server
+        await API.post("/pki/register", { publicKey: publicKeyJwk });
+      }
+    };
+    if (user) setupPKI();
+  }, [user]);
+
   // ── fetch applications ────────────────────────────────────────────
   const fetchApplications = async () => {
     try {
@@ -101,15 +126,67 @@ export default function Dashboard() {
       j.description?.toLowerCase().includes(search.toLowerCase())
     ), [jobs, search]);
 
-  const handleApply = async (jobId: string) => {
-    setApplying(jobId);
+  // ── Apply Form Logic ──────────────────────────────────────────────
+  const openApplyModal = (job: Job) => {
+    setSelectedJob(job);
+    setCoverNote("");
+    setResumeFile(null);
+    setApplyModalOpen(true);
+  };
+
+  const closeApplyModal = () => {
+    setApplyModalOpen(false);
+    setSelectedJob(null);
+    setCoverNote("");
+    setResumeFile(null);
+  };
+
+  const submitApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedJob) return;
+
+    setApplying(true);
+
     try {
-      await API.post("/apply", { jobId });
-      showToast("Application submitted!", "ok");
+      const formData = new FormData();
+      formData.append("jobId", selectedJob.id);
+      
+      // Force it to be a string even if empty
+      const safeCoverNote = coverNote || "";
+      formData.append("coverNote", safeCoverNote);
+      
+      if (resumeFile) formData.append("resume", resumeFile);
+
+      // --- PKI SIGNING LOGIC ---
+      const privateKeyStr = localStorage.getItem("pki_private_key");
+      if (privateKeyStr) {
+        const privateKey = JSON.parse(privateKeyStr);
+        
+        // Exact string construction
+        const dataToSign = `${selectedJob.id}:${safeCoverNote}`;
+        console.log("-----------------------------------------");
+        console.log("[USER FRONTEND] Constructing signature...");
+        console.log(`[USER FRONTEND] EXACT Data being signed: "${dataToSign}"`);
+        
+        const signature = await signData(privateKey, dataToSign);
+        formData.append("signature", signature);
+        console.log(`[USER FRONTEND] Signature generated (Length: ${signature.length})`);
+        console.log("-----------------------------------------");
+      } else {
+        console.warn("[USER FRONTEND] WARNING: No private key found in localStorage. Applying without signature.");
+      }
+      // ------------------------------
+
+      await API.post("/apply", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      
+      showToast("Signed application submitted successfully!", "ok");
       await fetchApplications();
-    } catch {
-      showToast("Already applied or an error occurred", "err");
-    } finally { setApplying(null); }
+      closeApplyModal();
+    } catch (err: any) {
+      showToast(err.response?.data?.error || "Failed to submit", "err");
+    } finally {
+      setApplying(false);
+    }
   };
 
   const handleUnapply = async (applicationId: string) => {
@@ -136,7 +213,6 @@ export default function Dashboard() {
     setConvoId(null);
 
     try {
-      // Pass the companyId to initiate/find the chat
       const { data } = await API.post("/conversation", { userIds: [targetCompanyId] });
       setConvoId(data.id);
       const msgs = await API.get(`/messages/${data.id}`);
@@ -184,48 +260,18 @@ export default function Dashboard() {
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         body { background: #f8f7f4; }
+        .dash-root { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: #f8f7f4; color: #1a1a1a; }
 
-        .dash-root {
-          min-height: 100vh;
-          font-family: 'DM Sans', sans-serif;
-          background: #f8f7f4;
-          color: #1a1a1a;
-        }
-
-        /* ── Navbar ── */
-        .navbar {
-          position: sticky; top: 0; z-index: 50;
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 0 2rem;
-          height: 64px;
-          background: #fff;
-          border-bottom: 1.5px solid #ece9e3;
-        }
-        .navbar-brand {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.2rem; font-weight: 800;
-          letter-spacing: -0.03em;
-          color: #1a1a1a;
-        }
+        /* Navbar & Global styles */
+        .navbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 64px; background: #fff; border-bottom: 1.5px solid #ece9e3; }
+        .navbar-brand { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; color: #1a1a1a; }
         .navbar-brand span { color: #e85d26; }
         .navbar-right { display: flex; align-items: center; gap: 1rem; }
         .navbar-greeting { font-size: 0.85rem; color: #6b7280; }
-        .avatar {
-          width: 38px; height: 38px; border-radius: 50%;
-          background: linear-gradient(135deg, #e85d26, #f59e0b);
-          color: #fff; font-family: 'Syne', sans-serif;
-          font-weight: 700; font-size: 1rem;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          border: 2px solid #fff;
-          box-shadow: 0 2px 8px rgba(232,93,38,.3);
-          transition: transform .15s;
-        }
+        .avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #e85d26, #f59e0b); color: #fff; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(232,93,38,.3); transition: transform .15s; }
         .avatar:hover { transform: scale(1.07); }
 
-        /* ── Layout & Stats ── */
         .dash-body { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
         @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
@@ -235,12 +281,10 @@ export default function Dashboard() {
         .stat-card.accent { background: #e85d26; border-color: #e85d26; }
         .stat-card.accent .stat-label, .stat-card.accent .stat-value { color: #fff; }
 
-        /* ── Search & Tabs ── */
         .search-wrap { position: relative; margin-bottom: 1.5rem; }
         .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
         .search-input { width: 100%; padding: .75rem 1rem .75rem 2.6rem; border: 1.5px solid #ece9e3; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .9rem; background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; color: #1a1a1a; }
         .search-input:focus { border-color: #e85d26; box-shadow: 0 0 0 3px rgba(232,93,38,.1); }
-        .search-count { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: .75rem; color: #9ca3af; }
         
         .tabs { display: flex; gap: .5rem; margin-bottom: 1.5rem; border-bottom: 1.5px solid #ece9e3; padding-bottom: 0; }
         .tab-btn { padding: .6rem 1.2rem; font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 500; border: none; background: none; cursor: pointer; color: #6b7280; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color .15s, border-color .15s; border-radius: 6px 6px 0 0; display: flex; align-items: center; gap: .4rem; }
@@ -248,7 +292,6 @@ export default function Dashboard() {
         .tab-badge { background: #f3f4f6; color: #6b7280; font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 99px; }
         .tab-btn.active .tab-badge { background: #fde8de; color: #e85d26; }
 
-        /* ── Job Cards ── */
         .jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1rem; }
         .job-card { background: #fff; border: 1.5px solid #ece9e3; border-radius: 16px; padding: 1.4rem; display: flex; flex-direction: column; gap: .8rem; transition: box-shadow .2s, transform .2s, border-color .2s; }
         .job-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.07); transform: translateY(-2px); border-color: #d1cfc8; }
@@ -261,7 +304,6 @@ export default function Dashboard() {
         .job-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
         .job-date { font-size: .74rem; color: #9ca3af; }
 
-        /* Buttons */
         .btn-apply { padding: .45rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: .84rem; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background .15s, transform .1s; display: flex; align-items: center; gap: .35rem; }
         .btn-apply:hover:not(:disabled) { background: #e85d26; }
         .btn-apply:active { transform: scale(.97); }
@@ -271,7 +313,6 @@ export default function Dashboard() {
         .btn-secondary { padding: .45rem 1rem; font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 600; background: #f3f4f6; color: #1a1a1a; border: 1.5px solid #ece9e3; border-radius: 8px; cursor: pointer; transition: background .15s, border-color .15s; display: flex; align-items: center; gap: .3rem; }
         .btn-secondary:hover { background: #e5e7eb; border-color: #d1d5db; }
 
-        /* ── Application Cards ── */
         .app-list { display: flex; flex-direction: column; gap: .75rem; }
         .app-card { background: #fff; border: 1.5px solid #ece9e3; border-radius: 14px; padding: 1.1rem 1.4rem; display: flex; align-items: center; gap: 1.2rem; transition: box-shadow .15s; }
         .app-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
@@ -280,13 +321,12 @@ export default function Dashboard() {
         .app-title { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .app-company { font-size: .8rem; color: #6b7280; margin-top: 2px; }
         .app-right { display: flex; flex-direction: column; align-items: flex-end; gap: .6rem; }
-        
         .app-actions { display: flex; gap: .5rem; align-items: center; }
         .status-badge { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap; letter-spacing: .04em; }
         .btn-unapply { font-family: 'DM Sans', sans-serif; font-size: .75rem; font-weight: 600; background: transparent; color: #9ca3af; border: none; cursor: pointer; transition: color .15s; }
         .btn-unapply:hover:not(:disabled) { color: #dc2626; text-decoration: underline; }
 
-        /* ── Chat Drawer ── */
+        /* Chat Overlay */
         .chat-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.4); backdrop-filter: blur(2px); display: flex; align-items: flex-end; justify-content: flex-end; }
         .chat-drawer { width: 380px; height: 520px; background: #fff; border: 1.5px solid #ece9e3; border-radius: 16px 16px 0 0; margin: 0 1.5rem; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 -8px 40px rgba(0,0,0,.15); }
         .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.2rem; background: #faf9f7; border-bottom: 1.5px solid #ece9e3; flex-shrink: 0; }
@@ -305,9 +345,21 @@ export default function Dashboard() {
         .chat-input:focus { border-color: #e85d26; }
         .chat-send { width: 38px; height: 38px; border-radius: 9px; background: #1a1a1a; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; transition: background .15s; flex-shrink: 0; }
         .chat-send:hover:not(:disabled) { background: #e85d26; }
-        .chat-send:disabled { opacity: .5; cursor: not-allowed; }
-
-        /* Empty / Skeleton / Toast omitted for brevity, keeping existing */
+        
+        /* Apply Modal Styles */
+        .modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(3px); }
+        .modal-content { background: #fff; width: 100%; max-width: 500px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.15); overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { padding: 1.2rem 1.5rem; border-bottom: 1.5px solid #ece9e3; display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: #1a1a1a; }
+        .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; }
+        .form-group { display: flex; flex-direction: column; gap: .5rem; }
+        .form-label { font-size: .85rem; font-weight: 600; color: #4b5563; }
+        .form-help { font-size: .75rem; color: #6b7280; margin-top: -3px; margin-bottom: 4px; }
+        .form-textarea { width: 100%; min-height: 100px; padding: .8rem; border: 1.5px solid #ece9e3; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: .9rem; resize: vertical; outline: none; transition: border-color .15s; }
+        .form-textarea:focus { border-color: #e85d26; }
+        .form-file { width: 100%; padding: .5rem; border: 1.5px dashed #d1cfc8; border-radius: 8px; font-size: .85rem; color: #6b7280; background: #faf9f7; cursor: pointer; }
+        .modal-footer { padding: 1.2rem 1.5rem; border-top: 1.5px solid #ece9e3; background: #faf9f7; display: flex; justify-content: flex-end; gap: .8rem; }
+        
         .empty { text-align: center; padding: 4rem 2rem; color: #9ca3af; }
         .empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
         .empty-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: #6b7280; }
@@ -315,7 +367,6 @@ export default function Dashboard() {
         .toast.ok { background: #1a1a1a; color: #fff; }
         .toast.err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
         @keyframes slideUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       <div className="dash-root">
@@ -364,7 +415,6 @@ export default function Dashboard() {
           {/* Jobs Tab */}
           {activeTab === "jobs" && (
             <>
-              {/* Search omitted for brevity, keeping existing code logic */}
               <div className="search-wrap">
                 <span className="search-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -383,7 +433,6 @@ export default function Dashboard() {
                 <div className="jobs-grid">
                   {filteredJobs.map((job) => {
                     const isApplied = appliedJobIds.has(job.id);
-                    const isLoading = applying === job.id;
                     const initials = job.company?.name?.slice(0, 2).toUpperCase() ?? "JB";
                     return (
                       <div className="job-card" key={job.id}>
@@ -399,11 +448,11 @@ export default function Dashboard() {
                         <div className="job-card-footer">
                           <span className="job-date">{job.createdAt ? new Date(job.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
                           <button
-                            className={`btn-apply ${isApplied ? "applied" : ""} ${isLoading ? "loading" : ""}`}
-                            onClick={() => !isApplied && handleApply(job.id)}
-                            disabled={isApplied || isLoading}
+                            className={`btn-apply ${isApplied ? "applied" : ""}`}
+                            onClick={() => !isApplied && openApplyModal(job)}
+                            disabled={isApplied}
                           >
-                            {isLoading ? "Applying…" : isApplied ? "Applied" : "Apply Now →"}
+                            {isApplied ? "Applied" : "Apply Now →"}
                           </button>
                         </div>
                       </div>
@@ -458,6 +507,61 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Apply Modal ── */}
+      {applyModalOpen && selectedJob && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeApplyModal(); }}>
+          <form className="modal-content" onSubmit={submitApplication}>
+            <div className="modal-header">
+              <div className="modal-title">Apply to {selectedJob.company?.name || "Company"}</div>
+              <button type="button" className="chat-close" onClick={closeApplyModal}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Role</label>
+                <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>{selectedJob.title}</div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="resumeUpload">Upload Resume (Optional)</label>
+                <div className="form-help">
+                  Select a file to update your profile resume for this application. If you leave this blank, your previously saved resume will be used.
+                </div>
+                <input 
+                  type="file" 
+                  id="resumeUpload"
+                  className="form-file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="coverNote">Cover Note</label>
+                <div className="form-help">Briefly explain why you are a good fit for this role.</div>
+                <textarea 
+                  id="coverNote"
+                  className="form-textarea" 
+                  placeholder="I am excited to apply for..."
+                  value={coverNote}
+                  onChange={(e) => setCoverNote(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button type="button" className="btn-secondary" onClick={closeApplyModal} disabled={applying}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-apply" disabled={applying || !coverNote.trim()}>
+                {applying ? "Submitting..." : "Submit Application"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* ── Chat Drawer ── */}
       {chatOpen && chatApp && (
         <div className="chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setChatOpen(false); }}>
@@ -478,7 +582,6 @@ export default function Dashboard() {
                 </div>
               ) : (
                 messages.map((msg) => {
-                  // If the user sent it, senderId matches user.id
                   const isSent = msg.senderId === user.id;
                   const time = new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
                   return (

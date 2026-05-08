@@ -1,7 +1,8 @@
 {
   "name": "backend",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@otplib/preset-default": "^12.0.1",
@@ -12,9 +13,12 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.3.1",
     "@types/qrcode": "^1.5.6",
+    "jest": "^30.4.0",
     "prisma": "^7.5.0",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.9.3"
   }
 }

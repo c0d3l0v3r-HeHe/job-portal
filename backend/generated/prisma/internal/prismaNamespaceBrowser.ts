@@ -97,7 +97,8 @@ export const ResumeScalarFieldEnum = {
   userId: 'userId',
   encryptedFilePath: 'encryptedFilePath',
   iv: 'iv',
-  originalName: 'originalName'
+  originalName: 'originalName',
+  createdAt: 'createdAt'
 } as const
 
 export type ResumeScalarFieldEnum = (typeof ResumeScalarFieldEnum)[keyof typeof ResumeScalarFieldEnum]
@@ -108,7 +109,9 @@ export const CompanyScalarFieldEnum = {
   name: 'name',
   email: 'email',
   passwordHash: 'passwordHash',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  totpSecret: 'totpSecret',
+  totpEnabled: 'totpEnabled'
 } as const
 
 export type CompanyScalarFieldEnum = (typeof CompanyScalarFieldEnum)[keyof typeof CompanyScalarFieldEnum]
@@ -135,6 +138,7 @@ export const ApplicationScalarFieldEnum = {
   updatedAt: 'updatedAt',
   status: 'status',
   coverNote: 'coverNote',
+  signature: 'signature',
   userId: 'userId',
   jobId: 'jobId'
 } as const

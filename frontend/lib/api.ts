@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API = axios.create({
   // Point this to your Bun/Hono backend
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://localhost:5000/api',
 });
 
 // Interceptor to attach the JWT token from localStorage to every request

@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import API from "@/lib/api";
-
+import VirtualKeyboard from "@/components/VirtualKeyboard";
+import { verifySignature } from "@/lib/pki";
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
@@ -15,6 +16,7 @@ type Applicant = {
   createdAt: string;
   updatedAt: string;
   coverNote?: string; // NEW
+  signature?: string;
   notes?: { id: string; note: string; createdAt: string }[]; // NEW
   user: { id: string; name: string | null; email: string };
   job: { id: string; title: string };
@@ -81,6 +83,61 @@ export default function CompanyDashboard() {
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
 
+  // OTP Modal
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [pendingResumeAppId, setPendingResumeAppId] = useState<string | null>(null);
+  const [pendingResumeName, setPendingResumeName] = useState<string>("");
+
+
+  const [verificationStatus, setVerificationStatus] = useState<"idle" | "verifying" | "valid" | "invalid">("idle");
+
+  const verifyApplicationAuthenticity = async () => {
+    if (!activeApplicant) return;
+    
+    console.log("-----------------------------------------");
+    console.log("[COMPANY FRONTEND] Starting PKI Verification");
+
+    if (!activeApplicant.signature) {
+      console.error("[COMPANY FRONTEND] activeApplicant.signature is NULL or missing!");
+      showToast("No digital signature found for this application.", "err");
+      setVerificationStatus("invalid");
+      return;
+    }
+
+    setVerificationStatus("verifying");
+    try {
+      // 1. Fetch public key
+      console.log(`[COMPANY FRONTEND] Fetching key for user ${activeApplicant.user.id}`);
+      const { data } = await API.get(`/pki/key/${activeApplicant.user.id}`);
+      
+      if (!data.publicKey) {
+        console.error("[COMPANY FRONTEND] Failed to fetch public key from backend.");
+        throw new Error("No public key");
+      }
+
+      // 2. Reconstruct data string
+      const safeCoverNote = activeApplicant.coverNote || "";
+      const dataToVerify = `${activeApplicant.job.id}:${safeCoverNote}`;
+      
+      console.log(`[COMPANY FRONTEND] EXACT Data being verified: "${dataToVerify}"`);
+      console.log(`[COMPANY FRONTEND] Verifying against signature length: ${activeApplicant.signature.length}`);
+
+      // 3. Verify
+      const isValid = await verifySignature(data.publicKey, activeApplicant.signature, dataToVerify);
+      
+      console.log(`[COMPANY FRONTEND] Verification Result: ${isValid ? "SUCCESS" : "FAILED"}`);
+      console.log("-----------------------------------------");
+
+      setVerificationStatus(isValid ? "valid" : "invalid");
+      if (isValid) showToast("Cryptographic signature is valid!", "ok");
+      else showToast("Signature verification failed. Data may be tampered.", "err");
+
+    } catch (err) {
+      console.error("[COMPANY FRONTEND] Error during verification process:", err);
+      showToast("Failed to verify signature.", "err");
+      setVerificationStatus("invalid");
+    }
+  };
   // ── Auth ──────────────────────────────────
   // ── Auth ──────────────────────────────────
   useEffect(() => {
@@ -241,9 +298,45 @@ export default function CompanyDashboard() {
 
   const openNotes = (applicant: Applicant) => {
     setActiveApplicant(applicant);
+    setVerificationStatus("idle"); // <--- ADD THIS LINE to reset the button
     setNoteModalOpen(true);
   };
 
+  // ── Download Resume ───────────────────────
+  // ── Secure Resume Download (OTP Trigger) ───────────────────────
+  const triggerResumeDownload = (applicationId: string, applicantName: string) => {
+    setPendingResumeAppId(applicationId);
+    setPendingResumeName(applicantName);
+    setOtpModalOpen(true); // Open the virtual keyboard modal
+  };
+
+  const executeDownload = async (pin: string) => {
+    if (!pendingResumeAppId) return;
+    try {
+      showToast("Verifying and decrypting...", "ok");
+
+      const response = await API.post(`/application/${pendingResumeAppId}/resume`,
+        { otpToken: pin },
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${pendingResumeName.replace(/\s+/g, '_')}_Resume.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+
+      setOtpModalOpen(false);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        showToast("Invalid authenticator code", "err");
+      } else {
+        showToast("Failed to retrieve resume", "err");
+      }
+    }
+  };
 
   // ── Stats ──────────────────────────────────
   const stats = useMemo(() => ({
@@ -895,6 +988,9 @@ export default function CompanyDashboard() {
                               </select>
                             </td>
                             <td style={{ display: "flex", gap: "0.5rem" }}>
+                              <button className="btn-msg" onClick={() => triggerResumeDownload(a.id, a.user.name ?? a.user.email)}>
+                                📄 Resume
+                              </button>
                               <button className="btn-msg" onClick={() => openNotes(a)}>
                                 📝 Notes
                               </button>
@@ -1094,21 +1190,86 @@ export default function CompanyDashboard() {
       {noteModalOpen && activeApplicant && (
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setNoteModalOpen(false); }}>
           <div className="modal" style={{ maxWidth: "550px", maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
-            <div className="modal-title" style={{ marginBottom: ".5rem" }}>
-              {activeApplicant.user.name ?? activeApplicant.user.email}
-            </div>
-            <div style={{ fontSize: ".85rem", color: "#6b7280", marginBottom: "1.5rem" }}>
-              Applying for: <strong style={{ color: "#f0ede8" }}>{activeApplicant.job.title}</strong>
-            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+              <div>
+                <div className="modal-title" style={{ marginBottom: ".25rem" }}>
+                  {activeApplicant.user.name ?? activeApplicant.user.email}
+                </div>
+                <div style={{ fontSize: ".85rem", color: "#6b7280" }}>
+                  Applying for: <strong style={{ color: "#f0ede8" }}>{activeApplicant.job.title}</strong>
+                </div>
+              </div>
 
+              <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                {/* NEW: Download Resume Button */}
+                <button
+                  className="btn-msg"
+                  onClick={() => triggerResumeDownload(activeApplicant.id, activeApplicant.user.name ?? activeApplicant.user.email)}
+                  style={{ padding: ".45rem .85rem" }}
+                >
+                  📄 Resume
+                </button>
+
+                {/* NEW: Quick Status Updater Dropdown */}
+                <select
+                  className="status-select"
+                  value={activeApplicant.status}
+                  disabled={updatingId === activeApplicant.id}
+                  style={{
+                    background: STATUS_META[activeApplicant.status].bg,
+                    color: STATUS_META[activeApplicant.status].color,
+                    padding: ".5rem 2rem .5rem 1rem",
+                    fontSize: ".8rem"
+                  }}
+                  onChange={(e) => {
+                    const newStatus = e.target.value as AppStatus;
+                    updateStatus(activeApplicant.id, newStatus);
+                    // Also update local modal state so UI doesn't lag
+                    setActiveApplicant(prev => prev ? { ...prev, status: newStatus } : null);
+                  }}
+                >
+                  {ALL_STATUSES.map((s) => (
+                    <option key={s} value={s} style={{ background: "#1a1a1a", color: "#f0ede8" }}>
+                      {STATUS_META[s].label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div style={{ overflowY: "auto", flex: 1, paddingRight: ".5rem", marginBottom: "1rem" }}>
               {/* Cover Note Section */}
               <label className="modal-label">Applicant Cover Note</label>
-              <div style={{ 
-                background: "#252525", padding: "1rem", borderRadius: "9px", 
-                fontSize: ".875rem", color: "#d1d5db", marginBottom: "1.5rem", fontStyle: activeApplicant.coverNote ? "normal" : "italic" 
+              <div style={{
+                background: "#252525", padding: "1rem", borderRadius: "9px",
+                fontSize: ".875rem", color: "#d1d5db", marginBottom: "1.5rem", fontStyle: activeApplicant.coverNote ? "normal" : "italic"
               }}>
                 {activeApplicant.coverNote ? activeApplicant.coverNote : "No cover note provided."}
+              </div>
+
+              {/* ──────────────────────────────────────────────── */}
+              {/* NEW: PKI Verification UI                         */}
+              {/* ──────────────────────────────────────────────── */}
+              <div style={{ marginBottom: "1.5rem", padding: "1rem", background: "#111", border: "1px solid #333", borderRadius: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: ".85rem", fontWeight: "bold", color: "#f0ede8" }}>Digital Signature (PKI)</div>
+                    <div style={{ fontSize: ".75rem", color: "#6b7280" }}>Verify the cryptographic authenticity of this application.</div>
+                  </div>
+
+                  <button
+                    onClick={verifyApplicationAuthenticity}
+                    disabled={verificationStatus === "verifying"}
+                    style={{
+                      padding: ".4rem .8rem", borderRadius: "6px", fontSize: ".75rem", fontWeight: "bold", cursor: "pointer",
+                      background: verificationStatus === "valid" ? "#166534" : verificationStatus === "invalid" ? "#991b1b" : "#252525",
+                      color: "white", border: "1px solid #444"
+                    }}
+                  >
+                    {verificationStatus === "idle" ? "Verify Signature" :
+                      verificationStatus === "verifying" ? "Verifying..." :
+                        verificationStatus === "valid" ? "✓ Verified Authentic" : "✕ Verification Failed"}
+                  </button>
+                </div>
               </div>
 
               {/* Recruiter Notes Section */}
@@ -1145,6 +1306,16 @@ export default function CompanyDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {otpModalOpen && (
+        <div className="modal-overlay" style={{ zIndex: 300 }} onClick={() => setOtpModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <VirtualKeyboard
+              onComplete={executeDownload}
+              onCancel={() => setOtpModalOpen(false)}
+            />
           </div>
         </div>
       )}

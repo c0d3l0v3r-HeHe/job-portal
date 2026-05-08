@@ -5,12 +5,13 @@ import { PrismaClient } from '../generated/prisma/client'
 import { PrismaBunSqlite } from 'prisma-adapter-bun-sqlite'
 import * as crypto from 'crypto'
 import QRCode from 'qrcode'
-import { encryptFile } from './utils/encryption'
+import { encryptFile, decryptFile } from './utils/encryption'
 import { generateTOTPSecret, verifyTOTP } from './utils/totp'
-
+import { readFileSync } from "fs"
 // --------------------------------------
 // Prisma
 // --------------------------------------
+// creates the prisma adapter and then prismma client 
 const adapter = new PrismaBunSqlite({
   url: 'file:./dev.db'
 })
@@ -19,6 +20,7 @@ const prisma = new PrismaClient({ adapter })
 // --------------------------------------
 // App Setup
 // --------------------------------------
+// create the hono app 
 const app = new Hono()
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key'
 
@@ -43,16 +45,63 @@ async function createAuditLog(action: string, userId: string | null, metadata: a
   await prisma.auditLog.create({
     data: {
       action,
-      userId: null, // ✅ REMOVE FK ISSUE
+      userId: null, 
       metadata: JSON.stringify({
         ...metadata,
-        actorId: userId // keep info here instead
+        actorId: userId 
       }),
       prevHash,
       hash
     }
   })
 }
+
+// ---------------------------------------
+// RATE LIMITERS
+// ---------------------------------------
+// --------------------------------------
+// ADVANCED RATE LIMITER FACTORY
+// --------------------------------------
+const rateLimitMap = new Map<string, { count: number, resetTime: number }>();
+
+// This factory creates custom limiters for different actions
+const createRateLimiter = (actionName: string, windowMs: number, maxRequests: number) => {
+  return async (c: any, next: any) => {
+    const now = Date.now();
+    const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown-ip';
+    
+    // We attach the actionName to the IP so different limits don't overlap
+    // e.g., "IP_192.168.1.1_login" vs "IP_192.168.1.1_upload"
+    const identifier = `IP_${ip}_${actionName}`;
+
+    let record = rateLimitMap.get(identifier);
+
+    if (!record || record.resetTime < now) {
+      record = { count: 1, resetTime: now + windowMs };
+      rateLimitMap.set(identifier, record);
+    } else {
+      record.count++;
+      
+      if (record.count > maxRequests) {
+        console.log(`[SECURITY] Rate limit exceeded for ${actionName} by IP: ${ip}`);
+        
+        await createAuditLog("RATE_LIMIT_EXCEEDED", null, { ip, action: actionName });
+        
+        return c.json({ 
+          error: `Too many requests for ${actionName}. Please wait and try again later.` 
+        }, 429);
+      }
+    }
+
+    await next();
+  };
+};
+
+// --- Instantiate our specific shields ---
+const loginLimiter    = createRateLimiter('login',    5 * 60 * 1000,  5);  // 5 per 5 mins
+const registerLimiter = createRateLimiter('register', 15 * 60 * 1000, 3);  // 3 per 15 mins
+const uploadLimiter   = createRateLimiter('upload',   10 * 60 * 1000, 5);  // 5 per 10 mins
+const generalLimiter  = createRateLimiter('api',      1 * 60 * 1000,  100); // 100 per 1 min
 
 // --------------------------------------
 // ROOT
@@ -63,7 +112,7 @@ app.get('/', (c) => c.text('Backend Running'))
 // AUTH ROUTES
 // ==========================================
 
-app.post('/api/auth/register', async (c) => {
+app.post('/api/auth/register', registerLimiter, async (c) => {
   const { email, password, name } = await c.req.json()
 
   const existing = await prisma.user.findUnique({ where: { email } })
@@ -104,7 +153,7 @@ app.post('/api/auth/verify-registration-2fa', async (c) => {
   return c.json({ message: 'Activated' })
 })
 
-app.post('/api/auth/login', async (c) => {
+app.post('/api/auth/login', loginLimiter, async (c) => {
   console.log("login request")
   const { email, password } = await c.req.json()
 
@@ -120,6 +169,41 @@ app.post('/api/auth/login', async (c) => {
 
   return c.json({ requires2FA: true, userId: user.id })
 })
+
+// Move this ABOVE the protectedApi.use('*', jwt(...)) line 
+// so you can access it in the browser address bar
+app.get('/api/admin/verify-logs', async (c) => {
+  const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: 'asc' } });
+  const results = [];
+  let systemIntegrity = "SECURE";
+
+  for (let i = 0; i < logs.length; i++) {
+    const log = logs[i];
+    const prevHash = i === 0 ? "GENESIS" : logs[i - 1].hash;
+
+    // Recalculate hash: action + metadata string + prevHash
+    const dataString = log.action + log.metadata + prevHash;
+    const computedHash = crypto.createHash('sha256').update(dataString).digest('hex');
+
+    if (computedHash !== log.hash) {
+      systemIntegrity = "COMPROMISED";
+      results.push({
+        logId: log.id,
+        action: log.action,
+        error: "Hash mismatch! Data has been modified.",
+        expected: computedHash,
+        actual: log.hash
+      });
+      break; // Stop at the first sign of trouble
+    }
+  }
+
+  return c.json({ 
+    status: systemIntegrity,
+    checkedCount: logs.length,
+    issues: results 
+  });
+});
 
 app.post('/api/auth/2fa-login', async (c) => {
   const { userId, token } = await c.req.json()
@@ -154,6 +238,8 @@ app.post('/api/auth/2fa-login', async (c) => {
 
 const protectedApi = new Hono()
 
+protectedApi.use('*', generalLimiter)
+
 protectedApi.use('*', jwt({
   secret: JWT_SECRET,
   alg: 'HS256'
@@ -172,52 +258,73 @@ protectedApi.get('/profile', async (c) => {
 })
 
 // ---------- RESUME ----------
-protectedApi.post('/resume/upload', async (c) => {
-  const payload = c.get('jwtPayload') as { id: string }
 
+protectedApi.get('/resumes', async (c) => {
+  const payload = c.get('jwtPayload') as { id: string }
+  const resumes = await prisma.resume.findMany({
+    where: { userId: payload.id },
+    orderBy: { createdAt: 'desc' }
+  })
+  return c.json(resumes)
+})
+
+protectedApi.post('/resume/upload', uploadLimiter, async (c) => {
+  const payload = c.get('jwtPayload') as { id: string }
   const body = await c.req.parseBody()
   const file = body['resume'] as File
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const { filepath, iv } = encryptFile(buffer, file.name)
 
-  const resume = await prisma.resume.upsert({
-    where: { userId: payload.id },
-    update: { encryptedFilePath: filepath, iv, originalName: file.name },
-    create: { userId: payload.id, encryptedFilePath: filepath, iv, originalName: file.name }
+  // ⚠️ Changed from upsert to create
+  const resume = await prisma.resume.create({
+    data: { userId: payload.id, encryptedFilePath: filepath, iv, originalName: file.name }
   })
 
   await createAuditLog("UPLOAD_RESUME", payload.id, {})
-
   return c.json(resume)
 })
 
-// ---------- COMPANY ----------
-app.post('/api/company/register', async (c) => {
-  console.log("company request received ")
+// ---------- DELETE RESUME ----------
+protectedApi.delete('/resume/:id', async (c) => {
+  const payload = c.get('jwtPayload') as { id: string }
+  const resumeId = c.req.param('id')
 
+  const resume = await prisma.resume.findUnique({ where: { id: resumeId } })
+  if (!resume) return c.json({ error: 'Not found' }, 404)
+  if (resume.userId !== payload.id) return c.json({ error: 'Forbidden' }, 403)
+
+  await prisma.resume.delete({ where: { id: resumeId } })
+  await createAuditLog("DELETE_RESUME", payload.id, { resumeId })
+  
+  return c.json({ message: 'Deleted' })
+})
+
+// ---------- COMPANY AUTH (WITH 2FA) ----------
+
+app.post('/api/company/register', registerLimiter, async (c) => {
   try {
     const { name, email, password } = await c.req.json()
 
-    const existing = await prisma.company.findUnique({
-      where: { email }
-    })
-
-    if (existing) {
-      return c.json({ error: "Company already exists" }, 400)
-    }
+    const existing = await prisma.company.findUnique({ where: { email } })
+    if (existing) return c.json({ error: "Company already exists" }, 400)
 
     const passwordHash = await Bun.password.hash(password)
+    const { secret, otpauth } = generateTOTPSecret(email) // Generate 2FA secret
 
     const company = await prisma.company.create({
       data: {
         name,
         email,
-        passwordHash
+        passwordHash,
+        totpSecret: secret,     // NEW
+        totpEnabled: false      // NEW
       }
     })
 
-    return c.json({ message: "Company registered successfully" })
+    const qrCode = await QRCode.toDataURL(otpauth)
+
+    return c.json({ qrCode, companyId: company.id })
 
   } catch (err) {
     console.error(err)
@@ -225,39 +332,68 @@ app.post('/api/company/register', async (c) => {
   }
 })
 
-app.post('/api/company/login', async (c) => {
-  console.log("company login request received ")
+// NEW: Company verify registration 2FA
+app.post('/api/company/verify-registration-2fa', async (c) => {
+  const { companyId, token } = await c.req.json()
+
+  const company = await prisma.company.findUnique({ where: { id: companyId } })
+  if (!company?.totpSecret) return c.json({ error: 'Invalid company' }, 400)
+
+  const valid = verifyTOTP(token, company.totpSecret)
+  if (!valid) return c.json({ error: 'Invalid OTP' }, 400)
+
+  await prisma.company.update({
+    where: { id: companyId },
+    data: { totpEnabled: true }
+  })
+
+  return c.json({ message: 'Activated' })
+})
+
+app.post('/api/company/login', loginLimiter, async (c) => {
   try {
     const { email, password } = await c.req.json()
 
-    const company = await prisma.company.findUnique({
-      where: { email }
-    })
-
-    if (!company) {
-      return c.json({ error: "Invalid credentials" }, 400)
-    }
+    const company = await prisma.company.findUnique({ where: { email } })
+    if (!company) return c.json({ error: "Invalid credentials" }, 400)
 
     const valid = await Bun.password.verify(password, company.passwordHash)
+    if (!valid) return c.json({ error: "Invalid credentials" }, 400)
 
-    if (!valid) {
-      return c.json({ error: "Invalid credentials" }, 400)
+    if (!company.totpEnabled) {
+      return c.json({ error: 'Enable 2FA first' }, 403)
     }
 
-    const token = await sign(
-      { id: company.id, role: "COMPANY" },
-      JWT_SECRET
-    )
-
-    return c.json({
-      token,
-      company
-    })
+    // Don't give the token yet! Just confirm credentials are good.
+    return c.json({ requires2FA: true, companyId: company.id })
 
   } catch (err) {
     console.error(err)
     return c.json({ error: "Login failed" }, 500)
   }
+})
+
+// NEW: Company final 2FA login
+app.post('/api/company/2fa-login', async (c) => {
+  const { companyId, token } = await c.req.json()
+
+  const company = await prisma.company.findUnique({ where: { id: companyId } })
+  if (!company || !company.totpSecret) return c.json({ error: 'Invalid' }, 400)
+
+  const valid = verifyTOTP(token, company.totpSecret)
+  if (!valid) return c.json({ error: 'Invalid OTP' }, 401)
+
+  const jwtToken = await sign(
+    { id: company.id, role: "COMPANY" },
+    JWT_SECRET
+  )
+
+  await createAuditLog("COMPANY_LOGIN_SUCCESS", company.id, {})
+
+  return c.json({
+    token: jwtToken,
+    company: { id: company.id, email: company.email, name: company.name }
+  })
 })
 
 // ---------- JOB ----------
@@ -406,24 +542,58 @@ protectedApi.get('/jobs', async (c) => {
   return c.json(jobs)
 })
 
-// ---------- APPLY ----------
-protectedApi.post('/apply', async (c) => {
-  const payload = c.get('jwtPayload') as { id: string }
-  // Extract coverNote safely
-  const { jobId, coverNote } = await c.req.json()
 
-  const appData = await prisma.application.create({
-    data: { 
-      userId: payload.id, 
-      jobId,
-      coverNote // NEW
+protectedApi.post('/application/:id/resume', async (c) => {
+  const payload = c.get('jwtPayload') as { id: string, role: string }
+  const applicationId = c.req.param('id')
+  
+  // Accept the OTP token from the frontend
+  const { otpToken } = await c.req.json()
+
+  if (payload.role !== "COMPANY") {
+    return c.json({ error: "Forbidden. Only companies can view resumes." }, 403)
+  }
+
+  // 1. Fetch Company & Verify OTP
+  const company = await prisma.company.findUnique({ where: { id: payload.id } })
+  if (!company) return c.json({ error: "Company not found" }, 404)
+  
+  // NOTE: For testing/demo purposes, if you haven't built the "Setup 2FA" screen for companies yet, 
+  // you might want to mock this check or temporarily bypass it until you seed a secret.
+  if (company.totpEnabled && company.totpSecret) {
+    const valid = verifyTOTP(otpToken, company.totpSecret)
+    if (!valid) return c.json({ error: "Invalid authenticator code" }, 401)
+  }
+
+  // 2. Fetch Application & Resume
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: { 
+      job: true,
+      user: { include: { resumes: { orderBy: { createdAt: 'desc' }, take: 1 } } }
     }
   })
 
-  await createAuditLog("APPLY_JOB", payload.id, { jobId })
+  if (!application) return c.json({ error: "Application not found" }, 404)
+  if (application.job.companyId !== payload.id) return c.json({ error: "Forbidden." }, 403)
 
-  return c.json(appData)
+  const resume = application.user.resumes[0]
+  if (!resume) return c.json({ error: "Candidate has not uploaded a resume" }, 404)
+
+  // 3. Decrypt and Return
+  try {
+    const decryptedBuffer = decryptFile(resume.encryptedFilePath, resume.iv)
+    
+    await createAuditLog("VIEW_SENSITIVE_RESUME", payload.id, { applicationId })
+
+    c.header('Content-Type', 'application/octet-stream')
+    c.header('Content-Disposition', `attachment; filename="${resume.originalName}"`)
+    return c.body(new Uint8Array(decryptedBuffer))
+  } catch (err) {
+    return c.json({ error: "Failed to decrypt resume file" }, 500)
+  }
 })
+
 
 // ---------- APPLICATIONS ----------
 protectedApi.get('/applications', async (c) => {
@@ -439,12 +609,32 @@ protectedApi.get('/applications', async (c) => {
 
 // ---------- STATUS ----------
 protectedApi.put('/application/status', async (c) => {
+  const payload = c.get('jwtPayload') as { id: string, role: string }
   const { applicationId, status } = await c.req.json()
+
+  // Security: Only companies can update status
+  if (payload.role !== "COMPANY") {
+    return c.json({ error: "Forbidden" }, 403)
+  }
+
+  // Find the application and verify ownership
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: { job: true }
+  })
+
+  if (!application) return c.json({ error: 'Application not found' }, 404)
+  
+  if (application.job.companyId !== payload.id) {
+    return c.json({ error: 'Forbidden. You do not own this job listing.' }, 403)
+  }
 
   const updated = await prisma.application.update({
     where: { id: applicationId },
     data: { status }
   })
+
+  await createAuditLog("UPDATE_APPLICATION_STATUS", payload.id, { applicationId, status })
 
   return c.json(updated)
 })
@@ -613,11 +803,120 @@ protectedApi.get('/admin/logs', async (c) => {
   return c.json(logs)
 })
 
+protectedApi.get('/admin/verify-logs', async (c) => {
+  const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: 'asc' } });
+  const results = [];
+  let isValid = true;
+
+  for (let i = 0; i < logs.length; i++) {
+    const log = logs[i];
+    const prevHash = i === 0 ? "GENESIS" : logs[i - 1].hash;
+
+    // The same formula used during creation
+    const dataString = log.action + log.metadata + prevHash;
+    const computedHash = crypto.createHash('sha256').update(dataString).digest('hex');
+
+    if (computedHash !== log.hash) {
+      isValid = false;
+      results.push({
+        id: log.id,
+        status: "TAMPERED",
+        expected: computedHash,
+        actual: log.hash
+      });
+      // Once one is broken, the whole chain from here on is invalid
+      break; 
+    }
+  }
+
+  return c.json({ 
+    systemIntegrity: isValid ? "SECURE" : "COMPROMISED",
+    details: isValid ? "All hashes match." : "Hash mismatch detected!",
+    tamperedLogs: results
+  });
+});
+
+// --- PKI: Register Public Key ---
+protectedApi.post('/pki/register', async (c) => {
+  const payload = c.get('jwtPayload') as { id: string }
+  const { publicKey } = await c.req.json()
+
+  console.log(`[BACKEND - PKI] Registering key for user ${payload.id}`);
+
+  const key = await prisma.userKey.upsert({
+    where: { userId_publicKey: { userId: payload.id, publicKey: JSON.stringify(publicKey) } },
+    update: {},
+    create: { userId: payload.id, publicKey: JSON.stringify(publicKey) }
+  })
+
+  return c.json({ message: "Key registered", keyId: key.id })
+})
+
+// --- PKI: Fetch User's Public Key ---
+protectedApi.get('/pki/key/:userId', async (c) => {
+  const userId = c.req.param('userId')
+  console.log(`[BACKEND - PKI] Company requested key for user ${userId}`);
+  
+  const key = await prisma.userKey.findFirst({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  })
+  
+  if (!key) {
+    console.log(`[BACKEND - PKI] ERROR: No key found in DB for user ${userId}`);
+    return c.json({ error: "No public key found" }, 404)
+  }
+  return c.json({ publicKey: JSON.parse(key.publicKey) })
+})
+
+// --- UPDATE EXISTING APPLY ROUTE ---
+protectedApi.post('/apply', uploadLimiter, async (c) => {
+  const payload = c.get('jwtPayload') as { id: string }
+  const body = await c.req.parseBody()
+  
+  const jobId = body['jobId'] as string
+  const coverNote = (body['coverNote'] as string) || "" 
+  const signature = body['signature'] as string 
+  const file = body['resume'] as File | undefined
+
+  console.log(`[BACKEND - APPLY] Received application from user ${payload.id}`);
+  console.log(`[BACKEND - APPLY] JobID: "${jobId}"`);
+  console.log(`[BACKEND - APPLY] CoverNote: "${coverNote}"`);
+  console.log(`[BACKEND - APPLY] Signature attached? ${signature ? "YES" : "NO"}`);
+
+  if (!jobId) return c.json({ error: "jobId is required" }, 400)
+
+  if (file) {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const { filepath, iv } = encryptFile(buffer, file.name)
+    await prisma.resume.create({
+      data: { userId: payload.id, encryptedFilePath: filepath, iv, originalName: file.name }
+    })
+  }
+
+  const appData = await prisma.application.create({
+    data: { 
+      userId: payload.id, 
+      jobId,
+      coverNote,
+      signature 
+    }
+  })
+
+  await createAuditLog("APPLY_JOB_WITH_PKI", payload.id, { jobId })
+  return c.json(appData)
+})
+
 // --------------------------------------
 app.route('/api', protectedApi)
 
 // --------------------------------------
 export default {
   port: 5000,
-  fetch: app.fetch
+  fetch: app.fetch,
+
+  tls: {
+    cert: readFileSync("certificate.crt"),
+    key: readFileSync("private.key"),
+  }
 }

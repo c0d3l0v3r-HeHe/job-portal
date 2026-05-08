@@ -30,6 +30,7 @@ export type ResumeMinAggregateOutputType = {
   encryptedFilePath: string | null
   iv: string | null
   originalName: string | null
+  createdAt: Date | null
 }
 
 export type ResumeMaxAggregateOutputType = {
@@ -38,6 +39,7 @@ export type ResumeMaxAggregateOutputType = {
   encryptedFilePath: string | null
   iv: string | null
   originalName: string | null
+  createdAt: Date | null
 }
 
 export type ResumeCountAggregateOutputType = {
@@ -46,6 +48,7 @@ export type ResumeCountAggregateOutputType = {
   encryptedFilePath: number
   iv: number
   originalName: number
+  createdAt: number
   _all: number
 }
 
@@ -56,6 +59,7 @@ export type ResumeMinAggregateInputType = {
   encryptedFilePath?: true
   iv?: true
   originalName?: true
+  createdAt?: true
 }
 
 export type ResumeMaxAggregateInputType = {
@@ -64,6 +68,7 @@ export type ResumeMaxAggregateInputType = {
   encryptedFilePath?: true
   iv?: true
   originalName?: true
+  createdAt?: true
 }
 
 export type ResumeCountAggregateInputType = {
@@ -72,6 +77,7 @@ export type ResumeCountAggregateInputType = {
   encryptedFilePath?: true
   iv?: true
   originalName?: true
+  createdAt?: true
   _all?: true
 }
 
@@ -153,6 +159,7 @@ export type ResumeGroupByOutputType = {
   encryptedFilePath: string
   iv: string
   originalName: string
+  createdAt: Date
   _count: ResumeCountAggregateOutputType | null
   _min: ResumeMinAggregateOutputType | null
   _max: ResumeMaxAggregateOutputType | null
@@ -182,6 +189,7 @@ export type ResumeWhereInput = {
   encryptedFilePath?: Prisma.StringFilter<"Resume"> | string
   iv?: Prisma.StringFilter<"Resume"> | string
   originalName?: Prisma.StringFilter<"Resume"> | string
+  createdAt?: Prisma.DateTimeFilter<"Resume"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -191,20 +199,22 @@ export type ResumeOrderByWithRelationInput = {
   encryptedFilePath?: Prisma.SortOrder
   iv?: Prisma.SortOrder
   originalName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type ResumeWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  userId?: string
   AND?: Prisma.ResumeWhereInput | Prisma.ResumeWhereInput[]
   OR?: Prisma.ResumeWhereInput[]
   NOT?: Prisma.ResumeWhereInput | Prisma.ResumeWhereInput[]
+  userId?: Prisma.StringFilter<"Resume"> | string
   encryptedFilePath?: Prisma.StringFilter<"Resume"> | string
   iv?: Prisma.StringFilter<"Resume"> | string
   originalName?: Prisma.StringFilter<"Resume"> | string
+  createdAt?: Prisma.DateTimeFilter<"Resume"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id" | "userId">
+}, "id">
 
 export type ResumeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -212,6 +222,7 @@ export type ResumeOrderByWithAggregationInput = {
   encryptedFilePath?: Prisma.SortOrder
   iv?: Prisma.SortOrder
   originalName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   _count?: Prisma.ResumeCountOrderByAggregateInput
   _max?: Prisma.ResumeMaxOrderByAggregateInput
   _min?: Prisma.ResumeMinOrderByAggregateInput
@@ -226,6 +237,7 @@ export type ResumeScalarWhereWithAggregatesInput = {
   encryptedFilePath?: Prisma.StringWithAggregatesFilter<"Resume"> | string
   iv?: Prisma.StringWithAggregatesFilter<"Resume"> | string
   originalName?: Prisma.StringWithAggregatesFilter<"Resume"> | string
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Resume"> | Date | string
 }
 
 export type ResumeCreateInput = {
@@ -233,7 +245,8 @@ export type ResumeCreateInput = {
   encryptedFilePath: string
   iv: string
   originalName: string
-  user: Prisma.UserCreateNestedOneWithoutResumeInput
+  createdAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutResumesInput
 }
 
 export type ResumeUncheckedCreateInput = {
@@ -242,6 +255,7 @@ export type ResumeUncheckedCreateInput = {
   encryptedFilePath: string
   iv: string
   originalName: string
+  createdAt?: Date | string
 }
 
 export type ResumeUpdateInput = {
@@ -249,7 +263,8 @@ export type ResumeUpdateInput = {
   encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
   iv?: Prisma.StringFieldUpdateOperationsInput | string
   originalName?: Prisma.StringFieldUpdateOperationsInput | string
-  user?: Prisma.UserUpdateOneRequiredWithoutResumeNestedInput
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutResumesNestedInput
 }
 
 export type ResumeUncheckedUpdateInput = {
@@ -258,6 +273,7 @@ export type ResumeUncheckedUpdateInput = {
   encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
   iv?: Prisma.StringFieldUpdateOperationsInput | string
   originalName?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ResumeCreateManyInput = {
@@ -266,6 +282,7 @@ export type ResumeCreateManyInput = {
   encryptedFilePath: string
   iv: string
   originalName: string
+  createdAt?: Date | string
 }
 
 export type ResumeUpdateManyMutationInput = {
@@ -273,6 +290,7 @@ export type ResumeUpdateManyMutationInput = {
   encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
   iv?: Prisma.StringFieldUpdateOperationsInput | string
   originalName?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ResumeUncheckedUpdateManyInput = {
@@ -281,11 +299,17 @@ export type ResumeUncheckedUpdateManyInput = {
   encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
   iv?: Prisma.StringFieldUpdateOperationsInput | string
   originalName?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ResumeNullableScalarRelationFilter = {
-  is?: Prisma.ResumeWhereInput | null
-  isNot?: Prisma.ResumeWhereInput | null
+export type ResumeListRelationFilter = {
+  every?: Prisma.ResumeWhereInput
+  some?: Prisma.ResumeWhereInput
+  none?: Prisma.ResumeWhereInput
+}
+
+export type ResumeOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type ResumeCountOrderByAggregateInput = {
@@ -294,6 +318,7 @@ export type ResumeCountOrderByAggregateInput = {
   encryptedFilePath?: Prisma.SortOrder
   iv?: Prisma.SortOrder
   originalName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type ResumeMaxOrderByAggregateInput = {
@@ -302,6 +327,7 @@ export type ResumeMaxOrderByAggregateInput = {
   encryptedFilePath?: Prisma.SortOrder
   iv?: Prisma.SortOrder
   originalName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type ResumeMinOrderByAggregateInput = {
@@ -310,38 +336,49 @@ export type ResumeMinOrderByAggregateInput = {
   encryptedFilePath?: Prisma.SortOrder
   iv?: Prisma.SortOrder
   originalName?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
-export type ResumeCreateNestedOneWithoutUserInput = {
-  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
-  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput
-  connect?: Prisma.ResumeWhereUniqueInput
+export type ResumeCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput> | Prisma.ResumeCreateWithoutUserInput[] | Prisma.ResumeUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput | Prisma.ResumeCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.ResumeCreateManyUserInputEnvelope
+  connect?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
 }
 
-export type ResumeUncheckedCreateNestedOneWithoutUserInput = {
-  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
-  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput
-  connect?: Prisma.ResumeWhereUniqueInput
+export type ResumeUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput> | Prisma.ResumeCreateWithoutUserInput[] | Prisma.ResumeUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput | Prisma.ResumeCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.ResumeCreateManyUserInputEnvelope
+  connect?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
 }
 
-export type ResumeUpdateOneWithoutUserNestedInput = {
-  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
-  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput
-  upsert?: Prisma.ResumeUpsertWithoutUserInput
-  disconnect?: Prisma.ResumeWhereInput | boolean
-  delete?: Prisma.ResumeWhereInput | boolean
-  connect?: Prisma.ResumeWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ResumeUpdateToOneWithWhereWithoutUserInput, Prisma.ResumeUpdateWithoutUserInput>, Prisma.ResumeUncheckedUpdateWithoutUserInput>
+export type ResumeUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput> | Prisma.ResumeCreateWithoutUserInput[] | Prisma.ResumeUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput | Prisma.ResumeCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.ResumeUpsertWithWhereUniqueWithoutUserInput | Prisma.ResumeUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.ResumeCreateManyUserInputEnvelope
+  set?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  disconnect?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  delete?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  connect?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  update?: Prisma.ResumeUpdateWithWhereUniqueWithoutUserInput | Prisma.ResumeUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.ResumeUpdateManyWithWhereWithoutUserInput | Prisma.ResumeUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.ResumeScalarWhereInput | Prisma.ResumeScalarWhereInput[]
 }
 
-export type ResumeUncheckedUpdateOneWithoutUserNestedInput = {
-  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
-  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput
-  upsert?: Prisma.ResumeUpsertWithoutUserInput
-  disconnect?: Prisma.ResumeWhereInput | boolean
-  delete?: Prisma.ResumeWhereInput | boolean
-  connect?: Prisma.ResumeWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ResumeUpdateToOneWithWhereWithoutUserInput, Prisma.ResumeUpdateWithoutUserInput>, Prisma.ResumeUncheckedUpdateWithoutUserInput>
+export type ResumeUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput> | Prisma.ResumeCreateWithoutUserInput[] | Prisma.ResumeUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.ResumeCreateOrConnectWithoutUserInput | Prisma.ResumeCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.ResumeUpsertWithWhereUniqueWithoutUserInput | Prisma.ResumeUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.ResumeCreateManyUserInputEnvelope
+  set?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  disconnect?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  delete?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  connect?: Prisma.ResumeWhereUniqueInput | Prisma.ResumeWhereUniqueInput[]
+  update?: Prisma.ResumeUpdateWithWhereUniqueWithoutUserInput | Prisma.ResumeUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.ResumeUpdateManyWithWhereWithoutUserInput | Prisma.ResumeUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.ResumeScalarWhereInput | Prisma.ResumeScalarWhereInput[]
 }
 
 export type ResumeCreateWithoutUserInput = {
@@ -349,6 +386,7 @@ export type ResumeCreateWithoutUserInput = {
   encryptedFilePath: string
   iv: string
   originalName: string
+  createdAt?: Date | string
 }
 
 export type ResumeUncheckedCreateWithoutUserInput = {
@@ -356,6 +394,7 @@ export type ResumeUncheckedCreateWithoutUserInput = {
   encryptedFilePath: string
   iv: string
   originalName: string
+  createdAt?: Date | string
 }
 
 export type ResumeCreateOrConnectWithoutUserInput = {
@@ -363,15 +402,44 @@ export type ResumeCreateOrConnectWithoutUserInput = {
   create: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
 }
 
-export type ResumeUpsertWithoutUserInput = {
-  update: Prisma.XOR<Prisma.ResumeUpdateWithoutUserInput, Prisma.ResumeUncheckedUpdateWithoutUserInput>
-  create: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
-  where?: Prisma.ResumeWhereInput
+export type ResumeCreateManyUserInputEnvelope = {
+  data: Prisma.ResumeCreateManyUserInput | Prisma.ResumeCreateManyUserInput[]
 }
 
-export type ResumeUpdateToOneWithWhereWithoutUserInput = {
-  where?: Prisma.ResumeWhereInput
+export type ResumeUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.ResumeWhereUniqueInput
+  update: Prisma.XOR<Prisma.ResumeUpdateWithoutUserInput, Prisma.ResumeUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.ResumeCreateWithoutUserInput, Prisma.ResumeUncheckedCreateWithoutUserInput>
+}
+
+export type ResumeUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.ResumeWhereUniqueInput
   data: Prisma.XOR<Prisma.ResumeUpdateWithoutUserInput, Prisma.ResumeUncheckedUpdateWithoutUserInput>
+}
+
+export type ResumeUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.ResumeScalarWhereInput
+  data: Prisma.XOR<Prisma.ResumeUpdateManyMutationInput, Prisma.ResumeUncheckedUpdateManyWithoutUserInput>
+}
+
+export type ResumeScalarWhereInput = {
+  AND?: Prisma.ResumeScalarWhereInput | Prisma.ResumeScalarWhereInput[]
+  OR?: Prisma.ResumeScalarWhereInput[]
+  NOT?: Prisma.ResumeScalarWhereInput | Prisma.ResumeScalarWhereInput[]
+  id?: Prisma.StringFilter<"Resume"> | string
+  userId?: Prisma.StringFilter<"Resume"> | string
+  encryptedFilePath?: Prisma.StringFilter<"Resume"> | string
+  iv?: Prisma.StringFilter<"Resume"> | string
+  originalName?: Prisma.StringFilter<"Resume"> | string
+  createdAt?: Prisma.DateTimeFilter<"Resume"> | Date | string
+}
+
+export type ResumeCreateManyUserInput = {
+  id?: string
+  encryptedFilePath: string
+  iv: string
+  originalName: string
+  createdAt?: Date | string
 }
 
 export type ResumeUpdateWithoutUserInput = {
@@ -379,6 +447,7 @@ export type ResumeUpdateWithoutUserInput = {
   encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
   iv?: Prisma.StringFieldUpdateOperationsInput | string
   originalName?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ResumeUncheckedUpdateWithoutUserInput = {
@@ -386,6 +455,15 @@ export type ResumeUncheckedUpdateWithoutUserInput = {
   encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
   iv?: Prisma.StringFieldUpdateOperationsInput | string
   originalName?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ResumeUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  encryptedFilePath?: Prisma.StringFieldUpdateOperationsInput | string
+  iv?: Prisma.StringFieldUpdateOperationsInput | string
+  originalName?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -396,6 +474,7 @@ export type ResumeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   encryptedFilePath?: boolean
   iv?: boolean
   originalName?: boolean
+  createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["resume"]>
 
@@ -405,6 +484,7 @@ export type ResumeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   encryptedFilePath?: boolean
   iv?: boolean
   originalName?: boolean
+  createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["resume"]>
 
@@ -414,6 +494,7 @@ export type ResumeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   encryptedFilePath?: boolean
   iv?: boolean
   originalName?: boolean
+  createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["resume"]>
 
@@ -423,9 +504,10 @@ export type ResumeSelectScalar = {
   encryptedFilePath?: boolean
   iv?: boolean
   originalName?: boolean
+  createdAt?: boolean
 }
 
-export type ResumeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "encryptedFilePath" | "iv" | "originalName", ExtArgs["result"]["resume"]>
+export type ResumeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "encryptedFilePath" | "iv" | "originalName" | "createdAt", ExtArgs["result"]["resume"]>
 export type ResumeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -447,6 +529,7 @@ export type $ResumePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     encryptedFilePath: string
     iv: string
     originalName: string
+    createdAt: Date
   }, ExtArgs["result"]["resume"]>
   composites: {}
 }
@@ -876,6 +959,7 @@ export interface ResumeFieldRefs {
   readonly encryptedFilePath: Prisma.FieldRef<"Resume", 'String'>
   readonly iv: Prisma.FieldRef<"Resume", 'String'>
   readonly originalName: Prisma.FieldRef<"Resume", 'String'>
+  readonly createdAt: Prisma.FieldRef<"Resume", 'DateTime'>
 }
     
 

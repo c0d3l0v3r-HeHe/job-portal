@@ -30,6 +30,8 @@ export type CompanyMinAggregateOutputType = {
   email: string | null
   passwordHash: string | null
   createdAt: Date | null
+  totpSecret: string | null
+  totpEnabled: boolean | null
 }
 
 export type CompanyMaxAggregateOutputType = {
@@ -38,6 +40,8 @@ export type CompanyMaxAggregateOutputType = {
   email: string | null
   passwordHash: string | null
   createdAt: Date | null
+  totpSecret: string | null
+  totpEnabled: boolean | null
 }
 
 export type CompanyCountAggregateOutputType = {
@@ -46,6 +50,8 @@ export type CompanyCountAggregateOutputType = {
   email: number
   passwordHash: number
   createdAt: number
+  totpSecret: number
+  totpEnabled: number
   _all: number
 }
 
@@ -56,6 +62,8 @@ export type CompanyMinAggregateInputType = {
   email?: true
   passwordHash?: true
   createdAt?: true
+  totpSecret?: true
+  totpEnabled?: true
 }
 
 export type CompanyMaxAggregateInputType = {
@@ -64,6 +72,8 @@ export type CompanyMaxAggregateInputType = {
   email?: true
   passwordHash?: true
   createdAt?: true
+  totpSecret?: true
+  totpEnabled?: true
 }
 
 export type CompanyCountAggregateInputType = {
@@ -72,6 +82,8 @@ export type CompanyCountAggregateInputType = {
   email?: true
   passwordHash?: true
   createdAt?: true
+  totpSecret?: true
+  totpEnabled?: true
   _all?: true
 }
 
@@ -153,6 +165,8 @@ export type CompanyGroupByOutputType = {
   email: string
   passwordHash: string
   createdAt: Date
+  totpSecret: string | null
+  totpEnabled: boolean
   _count: CompanyCountAggregateOutputType | null
   _min: CompanyMinAggregateOutputType | null
   _max: CompanyMaxAggregateOutputType | null
@@ -182,6 +196,8 @@ export type CompanyWhereInput = {
   email?: Prisma.StringFilter<"Company"> | string
   passwordHash?: Prisma.StringFilter<"Company"> | string
   createdAt?: Prisma.DateTimeFilter<"Company"> | Date | string
+  totpSecret?: Prisma.StringNullableFilter<"Company"> | string | null
+  totpEnabled?: Prisma.BoolFilter<"Company"> | boolean
   jobs?: Prisma.JobListRelationFilter
   participants?: Prisma.ConversationParticipantListRelationFilter
   messages?: Prisma.MessageListRelationFilter
@@ -193,6 +209,8 @@ export type CompanyOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
   jobs?: Prisma.JobOrderByRelationAggregateInput
   participants?: Prisma.ConversationParticipantOrderByRelationAggregateInput
   messages?: Prisma.MessageOrderByRelationAggregateInput
@@ -207,6 +225,8 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Company"> | string
   passwordHash?: Prisma.StringFilter<"Company"> | string
   createdAt?: Prisma.DateTimeFilter<"Company"> | Date | string
+  totpSecret?: Prisma.StringNullableFilter<"Company"> | string | null
+  totpEnabled?: Prisma.BoolFilter<"Company"> | boolean
   jobs?: Prisma.JobListRelationFilter
   participants?: Prisma.ConversationParticipantListRelationFilter
   messages?: Prisma.MessageListRelationFilter
@@ -218,6 +238,8 @@ export type CompanyOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrderInput | Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
   _count?: Prisma.CompanyCountOrderByAggregateInput
   _max?: Prisma.CompanyMaxOrderByAggregateInput
   _min?: Prisma.CompanyMinOrderByAggregateInput
@@ -232,6 +254,8 @@ export type CompanyScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"Company"> | string
   passwordHash?: Prisma.StringWithAggregatesFilter<"Company"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Company"> | Date | string
+  totpSecret?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
+  totpEnabled?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
 }
 
 export type CompanyCreateInput = {
@@ -240,6 +264,8 @@ export type CompanyCreateInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   jobs?: Prisma.JobCreateNestedManyWithoutCompanyInput
   participants?: Prisma.ConversationParticipantCreateNestedManyWithoutCompanyInput
   messages?: Prisma.MessageCreateNestedManyWithoutCompanyInput
@@ -251,6 +277,8 @@ export type CompanyUncheckedCreateInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   jobs?: Prisma.JobUncheckedCreateNestedManyWithoutCompanyInput
   participants?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutCompanyInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutCompanyInput
@@ -262,6 +290,8 @@ export type CompanyUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   jobs?: Prisma.JobUpdateManyWithoutCompanyNestedInput
   participants?: Prisma.ConversationParticipantUpdateManyWithoutCompanyNestedInput
   messages?: Prisma.MessageUpdateManyWithoutCompanyNestedInput
@@ -273,6 +303,8 @@ export type CompanyUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   jobs?: Prisma.JobUncheckedUpdateManyWithoutCompanyNestedInput
   participants?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutCompanyNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutCompanyNestedInput
@@ -284,6 +316,8 @@ export type CompanyCreateManyInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
 }
 
 export type CompanyUpdateManyMutationInput = {
@@ -292,6 +326,8 @@ export type CompanyUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type CompanyUncheckedUpdateManyInput = {
@@ -300,6 +336,8 @@ export type CompanyUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type CompanyCountOrderByAggregateInput = {
@@ -308,6 +346,8 @@ export type CompanyCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
 }
 
 export type CompanyMaxOrderByAggregateInput = {
@@ -316,6 +356,8 @@ export type CompanyMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
 }
 
 export type CompanyMinOrderByAggregateInput = {
@@ -324,6 +366,8 @@ export type CompanyMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  totpSecret?: Prisma.SortOrder
+  totpEnabled?: Prisma.SortOrder
 }
 
 export type CompanyScalarRelationFilter = {
@@ -388,6 +432,8 @@ export type CompanyCreateWithoutJobsInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   participants?: Prisma.ConversationParticipantCreateNestedManyWithoutCompanyInput
   messages?: Prisma.MessageCreateNestedManyWithoutCompanyInput
 }
@@ -398,6 +444,8 @@ export type CompanyUncheckedCreateWithoutJobsInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   participants?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutCompanyInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutCompanyInput
 }
@@ -424,6 +472,8 @@ export type CompanyUpdateWithoutJobsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   participants?: Prisma.ConversationParticipantUpdateManyWithoutCompanyNestedInput
   messages?: Prisma.MessageUpdateManyWithoutCompanyNestedInput
 }
@@ -434,6 +484,8 @@ export type CompanyUncheckedUpdateWithoutJobsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   participants?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutCompanyNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutCompanyNestedInput
 }
@@ -444,6 +496,8 @@ export type CompanyCreateWithoutParticipantsInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   jobs?: Prisma.JobCreateNestedManyWithoutCompanyInput
   messages?: Prisma.MessageCreateNestedManyWithoutCompanyInput
 }
@@ -454,6 +508,8 @@ export type CompanyUncheckedCreateWithoutParticipantsInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   jobs?: Prisma.JobUncheckedCreateNestedManyWithoutCompanyInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutCompanyInput
 }
@@ -480,6 +536,8 @@ export type CompanyUpdateWithoutParticipantsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   jobs?: Prisma.JobUpdateManyWithoutCompanyNestedInput
   messages?: Prisma.MessageUpdateManyWithoutCompanyNestedInput
 }
@@ -490,6 +548,8 @@ export type CompanyUncheckedUpdateWithoutParticipantsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   jobs?: Prisma.JobUncheckedUpdateManyWithoutCompanyNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutCompanyNestedInput
 }
@@ -500,6 +560,8 @@ export type CompanyCreateWithoutMessagesInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   jobs?: Prisma.JobCreateNestedManyWithoutCompanyInput
   participants?: Prisma.ConversationParticipantCreateNestedManyWithoutCompanyInput
 }
@@ -510,6 +572,8 @@ export type CompanyUncheckedCreateWithoutMessagesInput = {
   email: string
   passwordHash: string
   createdAt?: Date | string
+  totpSecret?: string | null
+  totpEnabled?: boolean
   jobs?: Prisma.JobUncheckedCreateNestedManyWithoutCompanyInput
   participants?: Prisma.ConversationParticipantUncheckedCreateNestedManyWithoutCompanyInput
 }
@@ -536,6 +600,8 @@ export type CompanyUpdateWithoutMessagesInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   jobs?: Prisma.JobUpdateManyWithoutCompanyNestedInput
   participants?: Prisma.ConversationParticipantUpdateManyWithoutCompanyNestedInput
 }
@@ -546,6 +612,8 @@ export type CompanyUncheckedUpdateWithoutMessagesInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totpSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totpEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   jobs?: Prisma.JobUncheckedUpdateManyWithoutCompanyNestedInput
   participants?: Prisma.ConversationParticipantUncheckedUpdateManyWithoutCompanyNestedInput
 }
@@ -605,6 +673,8 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   email?: boolean
   passwordHash?: boolean
   createdAt?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
   jobs?: boolean | Prisma.Company$jobsArgs<ExtArgs>
   participants?: boolean | Prisma.Company$participantsArgs<ExtArgs>
   messages?: boolean | Prisma.Company$messagesArgs<ExtArgs>
@@ -617,6 +687,8 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   email?: boolean
   passwordHash?: boolean
   createdAt?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
 }, ExtArgs["result"]["company"]>
 
 export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -625,6 +697,8 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   email?: boolean
   passwordHash?: boolean
   createdAt?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
 }, ExtArgs["result"]["company"]>
 
 export type CompanySelectScalar = {
@@ -633,9 +707,11 @@ export type CompanySelectScalar = {
   email?: boolean
   passwordHash?: boolean
   createdAt?: boolean
+  totpSecret?: boolean
+  totpEnabled?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "passwordHash" | "createdAt", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "passwordHash" | "createdAt" | "totpSecret" | "totpEnabled", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   jobs?: boolean | Prisma.Company$jobsArgs<ExtArgs>
   participants?: boolean | Prisma.Company$participantsArgs<ExtArgs>
@@ -658,6 +734,8 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     email: string
     passwordHash: string
     createdAt: Date
+    totpSecret: string | null
+    totpEnabled: boolean
   }, ExtArgs["result"]["company"]>
   composites: {}
 }
@@ -1089,6 +1167,8 @@ export interface CompanyFieldRefs {
   readonly email: Prisma.FieldRef<"Company", 'String'>
   readonly passwordHash: Prisma.FieldRef<"Company", 'String'>
   readonly createdAt: Prisma.FieldRef<"Company", 'DateTime'>
+  readonly totpSecret: Prisma.FieldRef<"Company", 'String'>
+  readonly totpEnabled: Prisma.FieldRef<"Company", 'Boolean'>
 }
     
 
