@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Job Portal — Frontend
 
-## Getting Started
+Web client for the Secure Job Portal (FCS — Fundamentals of Computer Security course project).
 
-First, run the development server:
+Built with **Next.js 16**, **React 19**, **Tailwind CSS 4** and **Axios**. It talks to the backend API at `https://localhost:5000/api`.
+
+## Setup & Run
+
+Start the [backend](../backend/README.md) first, then:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd frontend
+bun install
+bun run dev          # development server → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To run the frontend over **HTTPS** with the bundled certificate (`certificate.crt` / `private.key`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+bun server.ts        # → https://localhost:4000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Production build:
 
-## Learn More
+```bash
+bun run build
+bun run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+The backend uses a self-signed certificate — open `https://localhost:5000` once in the browser and accept it, otherwise API calls from the frontend will be blocked.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+frontend/
+├── app/
+│   ├── page.tsx                  # landing page
+│   ├── register/                 # job-seeker registration + 2FA QR setup
+│   ├── verify-otp/               # job-seeker OTP login step
+│   ├── login/                    # job-seeker login
+│   ├── register-company/         # company registration + 2FA QR setup
+│   ├── company-verify-otp/       # company OTP login step
+│   ├── company-login/            # company login
+│   ├── dashboard/                # job seeker: browse jobs, apply, applications, messages
+│   ├── profile/                  # job seeker: manage resumes
+│   ├── company/                  # company: dashboard, applicants, messaging
+│   │   └── create-job/           # company: post a new job
+│   └── admin/                    # admin: users, audit logs, integrity check
+├── components/
+│   ├── UploadResume.tsx          # resume upload widget
+│   └── VirtualKeyboard.tsx       # randomized on-screen keypad for OTP entry
+├── lib/
+│   ├── api.ts                    # Axios client, attaches the JWT to every request
+│   └── pki.ts                    # Web Crypto ECDSA key generation, signing, verification
+└── server.ts                     # custom HTTPS server (port 4000)
+```
 
-## Deploy on Vercel
+## How It Works
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Login with 2FA
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. On registration, the page shows the **QR code** returned by the backend; the user scans it with an authenticator app and confirms the first code.
+2. Login is two steps: email + password, then the 6-digit TOTP code (`/verify-otp` or `/company-verify-otp`).
+3. The JWT returned by the backend is saved in `localStorage`, and `lib/api.ts` adds it as `Authorization: Bearer <token>` to every request.
+
+### Job Seeker
+
+- **Dashboard** (`/dashboard`) — browse and search jobs, apply with a cover note and an optional resume file, track application status, withdraw applications, and chat with companies.
+- **Digital signature** — when applying, `lib/pki.ts` generates an **ECDSA P-256** key pair with the browser's Web Crypto API, registers the public key with the backend, and signs the application data with the private key.
+- **Profile** (`/profile`) — upload resumes with the `UploadResume` component (sent to the backend and encrypted there), view the list of uploaded resumes with their upload dates, and delete them.
+
+### Company
+
+- **Dashboard** (`/company`) — see all posted jobs and their applicants, change application status, add private recruiter notes, verify an applicant's digital signature, and message candidates.
+- **Post a job** (`/company/create-job`) — title, description, location, remote option, job type and tags.
+- **Secure resume download** — clicking **Resume** on an applicant opens an OTP prompt using the `VirtualKeyboard` component. The digits are shuffled every time, which protects the code against keyloggers and shoulder-surfing. The OTP is sent to the backend, which decrypts the resume and the browser downloads it as `<ApplicantName>_Resume.pdf`.
+
+### Admin
+
+- **Admin panel** (`/admin`) — list registered users, view the audit log, and run the audit-log integrity check that tells whether any log entry has been tampered with. Non-admin users are redirected to the dashboard.
